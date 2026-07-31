@@ -1,5 +1,6 @@
 import random
 import uuid
+import os
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, and_
@@ -39,15 +40,21 @@ async def request_signup_otp(payload: OTPRequest, db: AsyncSession = Depends(get
     # Send OTP Email
     email_sent = await send_otp_email(payload.email, otp)
     if not email_sent:
-        return {
-            "message": "Verification OTP generated, but SMTP timed out (Render outbound port block). Use the fallback OTP below.",
-            "debug_otp": otp
-        }
+        if os.getenv("ENV", "production").lower() == "development":
+            return {
+                "message": "Verification OTP generated, but SMTP timed out (Render outbound port block). Use the fallback OTP below.",
+                "debug_otp": otp
+            }
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to send verification email. Please try again later."
+            )
     return {"message": "Verification OTP sent to your email successfully."}
 
 @router.post("/signup/verify-otp")
 async def verify_signup_otp(payload: OTPVerify, db: AsyncSession = Depends(get_db)):
-    if payload.otp_code == "123456":
+    if payload.otp_code == "123456" and os.getenv("ENV", "production").lower() == "development":
         # Create a mock verified record so subsequent registration works
         result = await db.execute(
             select(OTPVerification).filter(OTPVerification.email == payload.email)
@@ -85,7 +92,7 @@ async def verify_signup_otp(payload: OTPVerify, db: AsyncSession = Depends(get_d
 @router.post("/signup/register")
 async def register_user(payload: UserRegister, db: AsyncSession = Depends(get_db)):
     # Check if OTP was verified
-    if payload.otp_code == "123456":
+    if payload.otp_code == "123456" and os.getenv("ENV", "production").lower() == "development":
         # Check if master bypass has a verified record
         result = await db.execute(
             select(OTPVerification).filter(
@@ -176,15 +183,21 @@ async def forgot_password(payload: ForgotPasswordRequest, db: AsyncSession = Dep
     # Send Reset Link/OTP email
     email_sent = await send_reset_password_email(payload.email, otp)
     if not email_sent:
-        return {
-            "message": "Reset OTP generated, but SMTP timed out. Use the fallback OTP below.",
-            "debug_otp": otp
-        }
+        if os.getenv("ENV", "production").lower() == "development":
+            return {
+                "message": "Reset OTP generated, but SMTP timed out. Use the fallback OTP below.",
+                "debug_otp": otp
+            }
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to send password reset email. Please try again later."
+            )
     return {"message": "Verification code and link sent successfully."}
 
 @router.post("/reset-password")
 async def reset_password(payload: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
-    if payload.otp_code == "123456":
+    if payload.otp_code == "123456" and os.getenv("ENV", "production").lower() == "development":
         # Create a temporary mock verified record for reset password
         result = await db.execute(
             select(OTPVerification).filter(OTPVerification.email == payload.email)

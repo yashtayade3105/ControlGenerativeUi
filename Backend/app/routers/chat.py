@@ -1,7 +1,6 @@
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from fastapi.responses import StreamingResponse
 from jose import jwt, JWTError
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,7 +10,7 @@ from app.config import settings
 from app.db.session import get_db
 from app.db.models import User, ChatSession, ChatMessage
 from app.schemas.chat import ChatSessionResponse, ChatSessionDetail, ChatSessionCreate, ChatMessageResponse, ChatMessageCreate
-from app.services.chatbot import get_thesys_chat_response, query_sgbau_knowledge_base
+from app.services.chatbot import get_llm_chat_response, query_sgbau_knowledge_base
 import json
 import re
 from app.services.validator import validate_and_repair_json
@@ -102,7 +101,7 @@ async def delete_session(session_id: uuid.UUID, current_user: User = Depends(get
     return {"message": "Chat session deleted successfully."}
 
 @router.post("/{session_id}/send")
-async def send_message_stream(
+async def send_message(
     session_id: uuid.UUID,
     payload: ChatMessageCreate,
     current_user: User = Depends(get_current_user),
@@ -139,80 +138,57 @@ async def send_message_stream(
         for m in past_messages
     ]
 
+    # Call LLM API (non-streaming, direct JSON retrieval)
     # Perform DB RAG facts lookup
     db_facts = await query_sgbau_knowledge_base(payload.content, db)
 
-    # Call Thesys / OpenAI compatible API stream
-    async def chat_response_generator():
-        response_stream = await get_thesys_chat_response(formatted_history, db_facts)
-        
-        full_reply = ""
-        
-        if hasattr(response_stream, "__aiter__"):
-            async for chunk in response_stream:
-                if isinstance(chunk, str):
-                    content = chunk
-                else:
-                    try:
-                        content = chunk.choices[0].delta.content
-                    except (AttributeError, IndexError):
-                        content = str(chunk)
-                if content:
-                    full_reply += content
-        else:
-            # Fallback list handler
-            for content in response_stream:
-                full_reply += content
+    from fastapi.responses import StreamingResponse
+    from app.services.chatbot import get_llm_chat_stream_response
 
-        # Perform strict validation on full reply
+    async def generate_response():
+        full_reply_buffer = ""
         try:
-            # Clean and parse system think blocks out of output
-            cleaned_reply = re.sub(r"<think>[\s\S]*?<\/think>", "", full_reply, flags=re.IGNORECASE).strip()
-            # Strip code block decorators
-            cleaned_reply = re.sub(r"^```json\s*", "", cleaned_reply, flags=re.IGNORECASE)
-            cleaned_reply = re.sub(r"\s*```$", "", cleaned_reply)
+            async for chunk in get_llm_chat_stream_response(formatted_history, db_facts):
+                full_reply_buffer += chunk
+                yield chunk
+        finally:
+            # Reconstruct the spec JSON
+            parsed_components = []
+            for line in full_reply_buffer.split('\n'):
+                line = line.strip()
+                if line:
+                    try:
+                        parsed_components.append(json.loads(line))
+                    except Exception:
+                        pass
             
-            validated_data = validate_and_repair_json(cleaned_reply)
-            saved_content = json.dumps(validated_data)
-        except Exception as e:
-            print(f"GenUI Contract Validation Error: {e}")
-            # Dynamic fallback creation matching registry components
-            fallback_error = {
+            # Use a robust fallback if nothing parsed
+            if not parsed_components:
+                parsed_components = [{
+                    "type": "Callout",
+                    "props": {"tone": "danger", "text": "Validation Error: Stream did not produce valid JSONL components."}
+                }]
+                
+            saved_content = json.dumps({
                 "version": "1.0",
-                "intent": "error",
+                "intent": "streaming_response",
                 "confidence": 1.0,
-                "components": [
-                  {
-                    "type": "Callout",
-                    "props": {
-                      "tone": "danger",
-                      "text": f"Error validating component structure: {str(e)}"
-                    }
-                  },
-                  {
-                    "type": "Callout",
-                    "props": {
-                      "tone": "info",
-                      "text": f"Raw Response: {full_reply[:200]}"
-                    }
-                  }
-                ],
-                "sources": [{"type": "tool", "name": "validation_layer"}]
-            }
-            saved_content = json.dumps(fallback_error)
+                "components": parsed_components
+            })
+            
+            # We must open a new DB session since the request-scoped one is likely closed
+            from app.db.session import AsyncSessionLocal
+            from sqlalchemy import update
+            async with AsyncSessionLocal() as background_db:
+                assistant_message = ChatMessage(
+                    session_id=session_id,
+                    sender="assistant",
+                    content=saved_content
+                )
+                background_db.add(assistant_message)
+                await background_db.execute(
+                    update(ChatSession).where(ChatSession.id == session_id).values(updated_at=datetime.utcnow())
+                )
+                await background_db.commit()
 
-        # Save assistant message to DB
-        async with db.begin_nested() if db.in_nested_transaction() else db as transaction:
-            assistant_message = ChatMessage(
-                session_id=session.id,
-                sender="assistant",
-                content=saved_content
-            )
-            db.add(assistant_message)
-            session.updated_at = datetime.utcnow()
-            await db.commit()
-
-        # Yield parsable dynamic specifications
-        yield saved_content
-
-    return StreamingResponse(chat_response_generator(), media_type="application/json")
+    return StreamingResponse(generate_response(), media_type="text/event-stream")

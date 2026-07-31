@@ -35,7 +35,7 @@ export const REGISTRY = {
   UserReview
 };
 
-export default function GenerativeRenderer({ spec, onFormSubmit }) {
+export default function GenerativeRenderer({ spec, onFormSubmit, onAction }) {
   // Validate basic schema structure to prevent white screen crashes
   if (!spec || typeof spec !== 'object') {
     return <Callout tone="danger" text="Invalid Spec Format: AI response could not be rendered." />;
@@ -68,8 +68,10 @@ export default function GenerativeRenderer({ spec, onFormSubmit }) {
           return <UnknownComponent key={i} type={node.type} />;
         }
 
-        // Setup dynamic onSubmit for BranchForm
-        const extraProps = {};
+        // Setup dynamic prop hooks
+        const extraProps = {
+          onAction: onAction
+        };
         if (node.type === 'BranchForm') {
           extraProps.onSubmit = onFormSubmit;
         }

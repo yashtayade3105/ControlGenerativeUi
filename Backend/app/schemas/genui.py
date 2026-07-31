@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from typing import List, Dict, Any, Optional
 
 class GenUISource(BaseModel):
@@ -6,11 +6,12 @@ class GenUISource(BaseModel):
     reference: Optional[str] = None
     name: Optional[str] = None
 
-    @validator('name', pre=True, always=True)
-    def resolve_name(cls, v, values):
+    @field_validator('name', mode='before')
+    @classmethod
+    def resolve_name(cls, v: Any, info: ValidationInfo) -> str:
         # Fallback to reference if name is not present
         if not v:
-            return values.get('reference') or "Unknown"
+            return info.data.get('reference') or "Unknown"
         return v
 
 class GenUIComponent(BaseModel):
@@ -18,15 +19,19 @@ class GenUIComponent(BaseModel):
     type: str
     props: Dict[str, Any]
 
-    @validator('props', pre=True)
-    def clean_props(cls, v):
+    @field_validator('props', mode='before')
+    @classmethod
+    def clean_props(cls, v: Any) -> Dict[str, Any]:
         if not isinstance(v, dict):
             return {}
-        # Clean null, undefined, NaN values
+        # Clean null, undefined, NaN values safely without breaking numeric props
         cleaned = {}
+        numeric_keys = {"rating", "cutoff", "year", "round", "cutoff_percentile", "cap_round", "code", "college_code"}
         for key, value in v.items():
             if value is None or value == "undefined" or str(value) == "NaN":
-                # Omit or default to "Unknown"
+                if key in numeric_keys:
+                    # Drop the key for numeric properties to prevent type casting issues
+                    continue
                 cleaned[key] = "Unknown"
             else:
                 cleaned[key] = value
@@ -39,8 +44,9 @@ class GenUIResponse(BaseModel):
     components: List[GenUIComponent]
     sources: List[GenUISource]
 
-    @validator('components')
-    def validate_components(cls, v):
+    @field_validator('components')
+    @classmethod
+    def validate_components(cls, v: List[GenUIComponent]) -> List[GenUIComponent]:
         # Check unique IDs
         ids = set()
         registered_types = {
@@ -58,11 +64,12 @@ class GenUIResponse(BaseModel):
             # Normalize type format and validate
             comp_type_lower = comp.type.lower()
             if comp_type_lower not in registered_types:
+                original_type = comp.type
                 # Map unknown to Callout tone warning fallback
                 comp.type = "Callout"
                 comp.props = {
                     "tone": "warn",
-                    "text": f"Unrecognized backend component mapping request for '{comp.type}'"
+                    "text": f"Unrecognized backend component mapping request for '{original_type}'"
                 }
                 
         return v

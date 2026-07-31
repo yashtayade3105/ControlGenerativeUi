@@ -72,8 +72,11 @@ def clean_dict_values(data: Any) -> Any:
     """
     if isinstance(data, dict):
         cleaned = {}
+        numeric_keys = {"rating", "cutoff", "year", "round", "cutoff_percentile", "cap_round", "code", "college_code"}
         for k, v in data.items():
             if v is None or v == "undefined" or str(v) == "NaN":
+                if k in numeric_keys:
+                    continue  # drop key to avoid breaking type validation
                 cleaned[k] = "Unknown"
             else:
                 cleaned[k] = clean_dict_values(v)
@@ -81,6 +84,7 @@ def clean_dict_values(data: Any) -> Any:
     elif isinstance(data, list):
         return [clean_dict_values(item) for item in data]
     return data
+
 
 def validate_and_repair_json(json_str: str) -> Dict[str, Any]:
     """
@@ -130,4 +134,5 @@ def validate_and_repair_json(json_str: str) -> Dict[str, Any]:
     response_model = GenUIResponse(**data)
     
     # Return serializable dict matching schema
-    return response_model.dict()
+    return response_model.model_dump()
+

@@ -1,7 +1,7 @@
 import React from 'react';
 import { School, Award, CheckCircle2, AlertCircle, HelpCircle } from 'lucide-react';
 
-export default function CollegeCard({ name, code, chance }) {
+export default function CollegeCard({ name, code, chance, onAction }) {
   const chanceConfig = {
     High: {
       bg: 'rgba(16, 185, 129, 0.15)',
@@ -81,6 +81,39 @@ export default function CollegeCard({ name, code, chance }) {
           <span>{currentChance.label}</span>
         </div>
       </div>
+
+      {onAction && (
+        <div style={{ display: 'flex', gap: '8px', marginTop: '4px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '10px' }}>
+          <button 
+            onClick={() => onAction({
+              action: "show_fees",
+              humanLabel: `See fees for ${name}`,
+              modelMessage: `Show the fee structure for college code ${code} (${name}).`
+            })}
+            style={{
+              padding: '6px 12px',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(6, 182, 212, 0.1)',
+              border: '1px solid rgba(6, 182, 212, 0.3)',
+              color: '#22d3ee',
+              fontSize: '12px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = 'rgba(6, 182, 212, 0.2)';
+              e.target.style.borderColor = '#06b6d4';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = 'rgba(6, 182, 212, 0.1)';
+              e.target.style.borderColor = 'rgba(6, 182, 212, 0.3)';
+            }}
+          >
+            See Fee Structure
+          </button>
+        </div>
+      )}
     </div>
   );
 }

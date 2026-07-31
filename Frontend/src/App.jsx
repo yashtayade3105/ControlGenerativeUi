@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import GenerativeRenderer, { REGISTRY } from './components/GenerativeRenderer';
-import { 
-  Sparkles, Terminal, Play, Cpu, Layers, MessageSquare, Send, 
-  Bot, User, Trash2, LogIn, UserPlus, LogOut, CheckCircle2, 
-  Key, ShieldAlert, Plus, Eye, EyeOff, Loader2 
-} from 'lucide-react';
+import GenerativeRenderer from './components/GenerativeRenderer';
+import AuthView from './components/AuthView';
+import Sidebar from './components/Sidebar';
+import PresetsPanel from './components/PresetsPanel';
+import ChatPanel from './components/ChatPanel';
+import { Sparkles, Terminal, Layers, MessageSquare } from 'lucide-react';
+import { THEME } from './components/Theme';
 
 // Pre-defined JSON specs matching the spectrum exercises to demonstrate control
 const MOCK_SPECS = {
@@ -13,6 +14,7 @@ const MOCK_SPECS = {
     spec: {
       "components": [
         { 
+          "id": "cmp_001",
           "type": "Callout", 
           "props": { 
             "tone": "info", 
@@ -20,6 +22,7 @@ const MOCK_SPECS = {
           } 
         },
         { 
+          "id": "cmp_002",
           "type": "BranchForm", 
           "props": { 
             "title": "SGBAU Entrance Criteria", 
@@ -37,6 +40,7 @@ const MOCK_SPECS = {
     spec: {
       "components": [
         { 
+          "id": "cmp_001",
           "type": "Callout", 
           "props": { 
             "tone": "success", 
@@ -44,6 +48,7 @@ const MOCK_SPECS = {
           } 
         },
         { 
+          "id": "cmp_002",
           "type": "CollegeCard", 
           "props": { 
             "name": "Government College of Engineering, Amravati (GCOEA)", 
@@ -52,6 +57,7 @@ const MOCK_SPECS = {
           } 
         },
         { 
+          "id": "cmp_003",
           "type": "CutoffTable", 
           "props": { 
             "rows": [
@@ -62,6 +68,7 @@ const MOCK_SPECS = {
           } 
         },
         { 
+          "id": "cmp_004",
           "type": "CollegeCard", 
           "props": { 
             "name": "Prof. Ram Meghe Institute of Technology & Research, Badnera", 
@@ -77,14 +84,17 @@ const MOCK_SPECS = {
     spec: {
       "components": [
         {
+          "id": "cmp_001",
           "type": "Callout",
           "props": { "tone": "success", "text": "Detailed institution insights loaded from SGBAU Database." }
         },
         {
+          "id": "cmp_002",
           "type": "CollegeCard",
           "props": { "name": "Government College of Engineering, Amravati", "code": 4004, "chance": "High" }
         },
         {
+          "id": "cmp_003",
           "type": "AdmissionTimeline",
           "props": {
             "events": [
@@ -95,6 +105,7 @@ const MOCK_SPECS = {
           }
         },
         {
+          "id": "cmp_004",
           "type": "DocumentsRequired",
           "props": {
             "category": "OBC / SEBC",
@@ -102,6 +113,7 @@ const MOCK_SPECS = {
           }
         },
         {
+          "id": "cmp_005",
           "type": "FeeStructure",
           "props": {
             "totalFee": "84,500",
@@ -113,12 +125,14 @@ const MOCK_SPECS = {
           }
         },
         {
+          "id": "cmp_006",
           "type": "FacilitiesList",
           "props": {
             "facilities": ["High-Speed Wifi Campus", "Central Library (60k+ Books)", "Separate Boys & Girls Hostel", "Gymnasium & Sports Ground"]
           }
         },
         {
+          "id": "cmp_007",
           "type": "PlacementStats",
           "props": {
             "highestPackage": "18.5",
@@ -127,6 +141,7 @@ const MOCK_SPECS = {
           }
         },
         {
+          "id": "cmp_008",
           "type": "ScholarshipCard",
           "props": {
             "name": "Rajarshi Chhatrapati Shahu Maharaj Fee Concession Scheme",
@@ -135,6 +150,7 @@ const MOCK_SPECS = {
           }
         },
         {
+          "id": "cmp_009",
           "type": "LocationMap",
           "props": {
             "address": "Kathora Road, VMV Road Area, Amravati, Maharashtra 444604",
@@ -143,6 +159,7 @@ const MOCK_SPECS = {
           }
         },
         {
+          "id": "cmp_010",
           "type": "ContactCard",
           "props": {
             "officer": "Dr. A. M. Mahalle (Admission Coordinator)",
@@ -151,6 +168,7 @@ const MOCK_SPECS = {
           }
         },
         {
+          "id": "cmp_011",
           "type": "FAQAccordion",
           "props": {
             "items": [
@@ -160,6 +178,7 @@ const MOCK_SPECS = {
           }
         },
         {
+          "id": "cmp_012",
           "type": "UserReview",
           "props": {
             "studentName": "Siddharth Deshmukh",
@@ -176,6 +195,7 @@ const MOCK_SPECS = {
     spec: {
       "components": [
         { 
+          "id": "cmp_001",
           "type": "Callout", 
           "props": { 
             "tone": "warn", 
@@ -183,12 +203,14 @@ const MOCK_SPECS = {
           } 
         },
         { 
+          "id": "cmp_002",
           "type": "SuperSmartAIWidget", 
           "props": { 
             "fancyData": true 
           } 
         },
         { 
+          "id": "cmp_003",
           "type": "Callout", 
           "props": { 
             "tone": "success", 
@@ -211,17 +233,6 @@ const EQUIVALENT_HTML_RESULTS = `
   <p>Code: 4004 - High Chance</p>
 </div>
 `;
-
-// Color palette config: High-End Neon Cyberpunk (Bright Deep Indigo/Violet & Cyber Teal Accents)
-const THEME = {
-  bg: '#0c0b17', // Pitch Dark Violet
-  sidebarBg: 'rgba(21, 19, 41, 0.8)', 
-  chatBg: 'rgba(16, 14, 33, 0.95)',
-  accent: '#a855f7', // Bright electric purple
-  teal: '#06b6d4', // Cyber teal
-  panelBg: 'linear-gradient(135deg, rgba(31, 26, 64, 0.7) 0%, rgba(20, 16, 43, 0.4) 100%)',
-  border: 'rgba(168, 85, 247, 0.15)', // Neon accent glow border
-};
 
 export default function App() {
   // Authentication states
@@ -277,10 +288,8 @@ export default function App() {
         const data = await res.json();
         setSessions(data);
         if (data.length > 0) {
-          // Select most recent active session
           selectSession(data[0].id);
         } else {
-          // Auto create a default initial session
           createNewSession();
         }
       } else if (res.status === 401) {
@@ -477,18 +486,27 @@ export default function App() {
     }
   };
 
+  // Action-driven next turn handler (Interaction Loop)
   const handleFormSubmit = (data) => {
     if (tabMode === 'presets') {
       handlePresetSelect('results');
     } else {
-      const mockQuery = `Search matchings for branch ${data.branch || 'Computer science'} with ${data.percentile || '90'} score`;
-      sendChatMessage(mockQuery);
+      // Create a structured action input driving the next turn
+      const modelMessage = `Form Submitted: BranchForm. Chosen Branch: ${data.branch || 'None'}. MHT-CET Score: ${data.percentile || 'None'}. Find cutoffs and recommendations for this combination.`;
+      const humanLabel = `Submitted entrance criteria: ${data.branch} - ${data.percentile}%ile`;
+      sendChatMessage(modelMessage, humanLabel);
     }
   };
 
-  // Chat integration post stream
-  const sendChatMessage = async (customQuery = '') => {
+  const handleAction = (actionData) => {
+    // Displays the friendly humanLabel in the chat, sends modelMessage to model
+    sendChatMessage(actionData.modelMessage, actionData.humanLabel);
+  };
+
+  // Chat message sending with non-streaming FastAPI handler
+  const sendChatMessage = async (customQuery = '', displayQuery = '') => {
     const query = customQuery || inputText;
+    const chatDisplay = displayQuery || query;
     if (!query.trim() || isSending) return;
 
     if (!currentSessionId) {
@@ -501,7 +519,7 @@ export default function App() {
     }
 
     const userMsgId = Date.now().toString();
-    setChatMessages(prev => [...prev, { id: userMsgId, sender: 'user', content: query }]);
+    setChatMessages(prev => [...prev, { id: userMsgId, sender: 'user', content: chatDisplay }]);
     setIsSending(true);
 
     const assistantMsgId = (Date.now() + 1).toString();
@@ -522,49 +540,89 @@ export default function App() {
       }
 
       const reader = response.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let partialResponse = '';
+      const decoder = new TextDecoder("utf-8");
+      let streamData = "";
+      let parsedComponents = [];
 
       while (true) {
-        const { value, done } = await reader.read();
+        const { done, value } = await reader.read();
         if (done) break;
+        
+        streamData += decoder.decode(value, { stream: true });
+        const lines = streamData.split('\n');
+        streamData = lines.pop(); // Keep the last incomplete chunk in buffer
 
-        const chunk = decoder.decode(value, { stream: true });
-        partialResponse += chunk;
+        let updated = false;
+        for (const line of lines) {
+          if (line.trim()) {
+            try {
+              const comp = JSON.parse(line);
+              parsedComponents.push(comp);
+              updated = true;
+            } catch (e) {
+              console.error("Partial JSON parse error:", e);
+            }
+          }
+        }
 
-        // Dynamic buffer specs feed
-        setChatMessages(prev => prev.map(msg => 
-          msg.id === assistantMsgId ? { ...msg, content: partialResponse } : msg
-        ));
+        if (updated) {
+          const progressiveSpec = {
+            version: "1.0",
+            intent: "streaming_response",
+            confidence: 1.0,
+            components: [...parsedComponents]
+          };
+          setChatMessages(prev => prev.map(msg => 
+            msg.id === assistantMsgId ? { ...msg, content: JSON.stringify(progressiveSpec), isStreaming: true } : msg
+          ));
+        }
       }
 
+      if (streamData.trim()) {
+        try {
+          parsedComponents.push(JSON.parse(streamData));
+        } catch (e) {}
+      }
+
+      const finalSpec = {
+        version: "1.0",
+        intent: "streaming_response",
+        confidence: 1.0,
+        components: parsedComponents
+      };
+
       setChatMessages(prev => prev.map(msg => 
-        msg.id === assistantMsgId ? { ...msg, isStreaming: false } : msg
+        msg.id === assistantMsgId ? { ...msg, content: JSON.stringify(finalSpec), isStreaming: false } : msg
       ));
 
-      // Refresh session sidebar timestamp sorting
       fetchSessions();
 
     } catch (err) {
       console.error("Connection failed: ", err);
       // Premium offline fallback engine
       const mockSpecResponse = {
+        version: "1.0",
+        intent: "offline_fallback",
+        confidence: 1.0,
         components: [
           {
+            id: "cmp_err_001",
             type: "Callout",
             props: {
               tone: "warn",
-              text: `Local model validation connection active. Backend server returned offline exception trace: ${err.message}`
+              text: `Local matching active. Backend exception: ${err.message}`
             }
           },
           {
+            id: "cmp_err_002",
             type: "Callout",
             props: {
               tone: "success",
-              text: `Generating matched cutoff profiles for: "${query}"`
+              text: `Simulating search results for your query: "${query}"`
             }
           },
           {
+            id: "cmp_err_003",
             type: "CollegeCard",
             props: {
               name: "Government College of Engineering, Amravati",
@@ -573,6 +631,7 @@ export default function App() {
             }
           },
           {
+            id: "cmp_err_004",
             type: "PlacementStats",
             props: {
               highestPackage: "18.5",
@@ -580,7 +639,8 @@ export default function App() {
               recruiters: ["TCS", "Cognizant", "Wipro"]
             }
           }
-        ]
+        ],
+        sources: [{"type": "system", "name": "offline_simulator"}]
       };
 
       setChatMessages(prev => prev.map(msg => 
@@ -595,356 +655,34 @@ export default function App() {
   const htmlTokenCount = estimateTokens(EQUIVALENT_HTML_RESULTS);
   const tokenSavingPercent = Math.round(((htmlTokenCount - jsonTokenCount) / htmlTokenCount) * 100);
 
-  // AUTH VIEW WRAPPER
+  // AUTHENTICATION GUARD WRAPPER
   if (!token) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        background: `radial-gradient(circle at top right, rgba(168, 85, 247, 0.15), transparent 45%),
-                    radial-gradient(circle at bottom left, rgba(6, 182, 212, 0.15), transparent 45%),
-                    ${THEME.bg}`,
-        fontFamily: "'Plus Jakarta Sans', sans-serif"
-      }}>
-        <div style={{
-          width: '90%',
-          maxWidth: '430px',
-          padding: '40px',
-          borderRadius: '24px',
-          background: THEME.panelBg,
-          border: `1px solid ${THEME.border}`,
-          backdropFilter: 'blur(16px)',
-          boxShadow: '0 12px 40px 0 rgba(0, 0, 0, 0.6), 0 0 15px 0 rgba(168, 85, 247, 0.1)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '24px'
-        }} className="animate-fade-in">
-          {/* Logo */}
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              display: 'inline-flex',
-              padding: '12px',
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, #a855f7 0%, #06b6d4 100%)',
-              color: '#fff',
-              marginBottom: '16px',
-              boxShadow: '0 4px 20px rgba(168, 85, 247, 0.4)'
-            }}>
-              <Sparkles size={28} />
-            </div>
-            <h2 style={{ margin: 0, color: '#fff', fontSize: '24px', fontWeight: '800', tracking: '-0.025em' }}>
-              SGBAU <span style={{ color: THEME.teal }}>Nexus AI</span>
-            </h2>
-            <p style={{ margin: '6px 0 0 0', fontSize: '13px', color: '#9c92cf' }}>Controlled Generative UI Admission Portal</p>
-          </div>
-
-          {/* Form Actions */}
-          {authMode === 'login' && (
-            <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#cbd5e1', letterSpacing: '0.05em' }}>Email Address</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="name@example.com"
-                  value={authEmail}
-                  onChange={(e) => setAuthEmail(e.target.value)}
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: '10px',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    backgroundColor: 'rgba(0,0,0,0.3)',
-                    color: '#fff',
-                    outline: 'none',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#cbd5e1', letterSpacing: '0.05em' }}>Password</label>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    placeholder="Enter account password"
-                    value={authPassword}
-                    onChange={(e) => setAuthPassword(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '12px 48px 12px 16px',
-                      borderRadius: '10px',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      backgroundColor: 'rgba(0,0,0,0.3)',
-                      color: '#fff',
-                      outline: 'none',
-                      fontSize: '14px',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{
-                      position: 'absolute',
-                      right: '12px',
-                      background: 'none',
-                      border: 'none',
-                      color: '#9ca3af',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoadingAuth}
-                style={{
-                  padding: '14px',
-                  borderRadius: '10px',
-                  border: 'none',
-                  background: 'linear-gradient(135deg, #a855f7 0%, #6b21a8 100%)',
-                  color: '#fff',
-                  fontSize: '14px',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  boxShadow: '0 4px 15px rgba(168, 85, 247, 0.25)',
-                  transition: 'transform 0.2s'
-                }}
-              >
-                {isLoadingAuth ? <Loader2 size={16} className="animate-spin" /> : <LogIn size={16} />}
-                <span>Login Securely</span>
-              </button>
-
-              <div style={{ textAlign: 'center', marginTop: '8px' }}>
-                <span style={{ fontSize: '13px', color: '#9ca3af' }}>New to Nexus Portal? </span>
-                <button
-                  type="button"
-                  onClick={() => { setAuthMode('signup_otp'); setAuthError(''); }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: THEME.teal,
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    padding: 0
-                  }}
-                >
-                  Create Account
-                </button>
-              </div>
-            </form>
-          )}
-
-          {authMode === 'signup_otp' && (
-            <form onSubmit={handleRequestOtp} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#cbd5e1', letterSpacing: '0.05em' }}>Email Address</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="name@example.com"
-                  value={authEmail}
-                  onChange={(e) => setAuthEmail(e.target.value)}
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: '10px',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    backgroundColor: 'rgba(0,0,0,0.3)',
-                    color: '#fff',
-                    outline: 'none',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoadingAuth}
-                style={{
-                  padding: '14px',
-                  borderRadius: '10px',
-                  border: 'none',
-                  background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
-                  color: '#fff',
-                  fontSize: '14px',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  boxShadow: '0 4px 15px rgba(6, 182, 212, 0.25)'
-                }}
-              >
-                {isLoadingAuth ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}
-                <span>Send verification OTP</span>
-              </button>
-
-              <div style={{ textAlign: 'center', marginTop: '8px' }}>
-                <span style={{ fontSize: '13px', color: '#9ca3af' }}>Already verified? </span>
-                <button
-                  type="button"
-                  onClick={() => setAuthMode('login')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: THEME.accent,
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    padding: 0
-                  }}
-                >
-                  Log In
-                </button>
-              </div>
-            </form>
-          )}
-
-          {authMode === 'signup_register' && (
-            <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#cbd5e1', letterSpacing: '0.05em' }}>Full Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Dr. Rajesh Patil"
-                  value={authName}
-                  onChange={(e) => setAuthName(e.target.value)}
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: '10px',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    backgroundColor: 'rgba(0,0,0,0.3)',
-                    color: '#fff',
-                    outline: 'none',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#cbd5e1', letterSpacing: '0.05em' }}>6-Digit OTP Code</label>
-                <input
-                  type="text"
-                  required
-                  maxLength="6"
-                  placeholder="Enter 123456 (Master Bypass)"
-                  value={authOtp}
-                  onChange={(e) => setAuthOtp(e.target.value)}
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: '10px',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    backgroundColor: 'rgba(0,0,0,0.3)',
-                    color: '#fff',
-                    outline: 'none',
-                    fontSize: '14px',
-                    fontFamily: 'monospace',
-                    letterSpacing: '4px',
-                    textAlign: 'center'
-                  }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#cbd5e1', letterSpacing: '0.05em' }}>Create Password</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="Minimum 6 characters"
-                  value={authPassword}
-                  onChange={(e) => setAuthPassword(e.target.value)}
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: '10px',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    backgroundColor: 'rgba(0,0,0,0.3)',
-                    color: '#fff',
-                    outline: 'none',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoadingAuth}
-                style={{
-                  padding: '14px',
-                  borderRadius: '10px',
-                  border: 'none',
-                  background: 'linear-gradient(135deg, #a855f7 0%, #06b6d4 100%)',
-                  color: '#fff',
-                  fontSize: '14px',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  boxShadow: '0 4px 15px rgba(168, 85, 247, 0.25)'
-                }}
-              >
-                {isLoadingAuth ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-                <span>Complete Account Setup</span>
-              </button>
-            </form>
-          )}
-
-          {/* Feedback messages */}
-          {authError && (
-            <div style={{
-              padding: '12px',
-              borderRadius: '10px',
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.25)',
-              color: '#fca5a5',
-              fontSize: '13px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <ShieldAlert size={16} style={{ flexShrink: 0 }} />
-              <span>{authError}</span>
-            </div>
-          )}
-
-          {authSuccess && (
-            <div style={{
-              padding: '12px',
-              borderRadius: '10px',
-              backgroundColor: 'rgba(16, 185, 129, 0.1)',
-              border: '1px solid rgba(16, 185, 129, 0.25)',
-              color: '#a7f3d0',
-              fontSize: '13px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <CheckCircle2 size={16} style={{ flexShrink: 0 }} />
-              <span>{authSuccess}</span>
-            </div>
-          )}
-        </div>
-      </div>
+      <AuthView
+        authMode={authMode}
+        setAuthMode={setAuthMode}
+        authEmail={authEmail}
+        setAuthEmail={setAuthEmail}
+        authName={authName}
+        setAuthName={setAuthName}
+        authPassword={authPassword}
+        setAuthPassword={setAuthPassword}
+        authOtp={authOtp}
+        setAuthOtp={setAuthOtp}
+        showPassword={showPassword}
+        setShowPassword={setShowPassword}
+        authError={authError}
+        setAuthError={setAuthError}
+        authSuccess={authSuccess}
+        isLoadingAuth={isLoadingAuth}
+        handleLogin={handleLogin}
+        handleRequestOtp={handleRequestOtp}
+        handleRegister={handleRegister}
+      />
     );
   }
 
-  // MAIN APPLICATION INTERFACE (Neon Cyberpunk Brightened Deep theme)
+  // MAIN APPLICATION DASHBOARD
   return (
     <div style={{ 
       minHeight: '100vh', 
@@ -954,164 +692,16 @@ export default function App() {
       fontFamily: "'Plus Jakarta Sans', sans-serif"
     }}>
       
-      {/* SaaS Dynamic Chat Session Sidebar (ChatGPT / Claude layout) */}
-      <aside style={{
-        width: '260px',
-        backgroundColor: THEME.sidebarBg,
-        borderRight: `1px solid ${THEME.border}`,
-        display: 'flex',
-        flexDirection: 'column',
-        flexShrink: 0
-      }}>
-        {/* User profile actions */}
-        <div style={{
-          padding: '16px',
-          borderBottom: `1px solid ${THEME.border}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          background: 'rgba(0, 0, 0, 0.2)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #a855f7 0%, #06b6d4 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              fontSize: '12px',
-              fontWeight: '700'
-            }}>
-              N
-            </div>
-            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
-              <span style={{ fontSize: '13px', fontWeight: '600', color: '#fff' }}>Nexus Portal</span>
-            </div>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            title="Log Out"
-            style={{
-              padding: '6px',
-              borderRadius: '6px',
-              border: 'none',
-              background: 'none',
-              color: '#ef4444',
-              cursor: 'pointer',
-              display: 'flex',
-              transition: 'background 0.2s'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-          >
-            <LogOut size={16} />
-          </button>
-        </div>
-
-        {/* Start New Chat session button */}
-        <div style={{ padding: '12px' }}>
-          <button
-            onClick={createNewSession}
-            style={{
-              width: '100%',
-              padding: '10px 14px',
-              borderRadius: '8px',
-              border: `1px dashed ${THEME.border}`,
-              backgroundColor: 'rgba(168, 85, 247, 0.05)',
-              color: '#fff',
-              fontSize: '13px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.15)';
-              e.currentTarget.style.borderColor = THEME.accent;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.05)';
-              e.currentTarget.style.borderColor = THEME.border;
-            }}
-          >
-            <Plus size={14} style={{ color: THEME.teal }} />
-            <span>New Chat session</span>
-          </button>
-        </div>
-
-        {/* Session history listings */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 12px 12px 12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          {isSessionsLoading ? (
-            <div style={{ textAlign: 'center', padding: '20px', fontSize: '12px', color: '#9ca3af' }}>
-              <Loader2 size={16} className="animate-spin" style={{ margin: '0 auto 8px auto' }} />
-              <span>Loading chat history...</span>
-            </div>
-          ) : sessions.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '20px', fontSize: '12px', color: '#9ca3af' }}>
-              No chats recorded.
-            </div>
-          ) : (
-            sessions.map((s) => {
-              const isActive = s.id === currentSessionId;
-              return (
-                <div
-                  key={s.id}
-                  onClick={() => selectSession(s.id)}
-                  style={{
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    backgroundColor: isActive ? 'rgba(168, 85, 247, 0.15)' : 'rgba(255,255,255,0.01)',
-                    border: isActive ? `1px solid rgba(168, 85, 247, 0.3)` : '1px solid transparent',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    transition: 'all 0.2s',
-                    group: 'true'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)';
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.01)';
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                    <MessageSquare size={13} style={{ color: isActive ? THEME.teal : '#9ca3af', flexShrink: 0 }} />
-                    <span style={{ fontSize: '13px', fontWeight: '500', color: isActive ? '#fff' : '#cbd5e1', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>
-                      {s.title}
-                    </span>
-                  </div>
-
-                  <button
-                    onClick={(e) => deleteSession(s.id, e)}
-                    style={{
-                      border: 'none',
-                      background: 'none',
-                      color: '#9ca3af',
-                      cursor: 'pointer',
-                      padding: '2px',
-                      display: 'flex',
-                      borderRadius: '4px'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
-                    onMouseLeave={(e) => e.currentTarget.style.color = '#9ca3af'}
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </aside>
+      {/* SaaS Dynamic Chat Session Sidebar */}
+      <Sidebar
+        sessions={sessions}
+        isSessionsLoading={isSessionsLoading}
+        currentSessionId={currentSessionId}
+        createNewSession={createNewSession}
+        selectSession={selectSession}
+        deleteSession={deleteSession}
+        handleLogout={handleLogout}
+      />
 
       {/* Workspace Area */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -1201,305 +791,35 @@ export default function App() {
           maxHeight: 'calc(100vh - 73px)',
           boxSizing: 'border-box'
         }}>
-          {/* Left panel options: Sandbox json editor vs dynamic chatbot panel */}
+          {/* Left Panel: Presets vs Chat */}
           {tabMode === 'presets' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '-8px' }}>
-                {Object.keys(MOCK_SPECS).map((key) => (
-                  <button
-                    key={key}
-                    onClick={() => handlePresetSelect(key)}
-                    style={{
-                      padding: '8px 14px',
-                      borderRadius: '8px',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                      backgroundColor: activeKey === key ? 'rgba(168, 85, 247, 0.15)' : 'rgba(255,255,255,0.02)',
-                      color: '#fff',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    {MOCK_SPECS[key].title}
-                  </button>
-                ))}
-              </div>
-
-              <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', border: `1px solid ${THEME.border}` }}>
-                <div style={{
-                  padding: '12px 16px',
-                  borderBottom: `1px solid ${THEME.border}`,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  backgroundColor: 'rgba(0,0,0,0.1)'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '600', color: '#cbd5e1' }}>
-                    <Terminal size={14} style={{ color: THEME.teal }} />
-                    <span>JSON UI Schema Spec (Model Output)</span>
-                  </div>
-                  <button 
-                    onClick={handleApplySpec}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: '6px',
-                      border: 'none',
-                      backgroundColor: '#10b981',
-                      color: '#fff',
-                      fontSize: '11px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
-                  >
-                    <Play size={11} />
-                    Apply Schema
-                  </button>
-                </div>
-
-                <textarea
-                  value={customSpecText}
-                  onChange={(e) => setCustomSpecText(e.target.value)}
-                  style={{
-                    flex: 1,
-                    padding: '16px',
-                    backgroundColor: '#070a13',
-                    color: '#34d399',
-                    fontFamily: 'monospace',
-                    fontSize: '13px',
-                    lineHeight: '1.6',
-                    border: 'none',
-                    resize: 'none',
-                    outline: 'none'
-                  }}
-                />
-
-                {errorMsg && (
-                  <div style={{
-                    backgroundColor: 'rgba(239,68,68,0.15)',
-                    borderTop: '1px solid rgba(239,68,68,0.3)',
-                    padding: '10px 16px',
-                    color: '#fca5a5',
-                    fontSize: '12px',
-                    fontFamily: 'monospace'
-                  }}>
-                    {errorMsg}
-                  </div>
-                )}
-              </div>
-
-              {/* Token Savings Metric Console */}
-              <div className="glass-panel" style={{ padding: '16px', border: `1px solid ${THEME.border}` }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                  <Cpu size={16} style={{ color: THEME.accent }} />
-                  <h4 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#cbd5e1' }}>Generative UI Savings Metrics</h4>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: '16px' }}>
-                  <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <span style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>JSON Spec Size</span>
-                    <span style={{ fontSize: '16px', fontWeight: '700', color: THEME.teal }}>~{jsonTokenCount} <span style={{ fontSize: '11px', fontWeight: '400', color: '#9ca3af' }}>Tokens</span></span>
-                  </div>
-
-                  <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <span style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>Equivalent HTML Size</span>
-                    <span style={{ fontSize: '16px', fontWeight: '700', color: '#ef4444' }}>~{htmlTokenCount} <span style={{ fontSize: '11px', fontWeight: '400', color: '#9ca3af' }}>Tokens</span></span>
-                  </div>
-
-                  <div style={{ background: 'linear-gradient(135deg, rgba(168,85,247,0.15) 0%, rgba(6,182,212,0.05) 100%)', padding: '10px', borderRadius: '8px', border: `1px solid ${THEME.border}` }}>
-                    <span style={{ fontSize: '11px', color: '#c084fc', display: 'block', marginBottom: '4px' }}>Token Saving Savings</span>
-                    <span style={{ fontSize: '16px', fontWeight: '700', color: '#fff' }}>
-                      {tokenSavingPercent > 0 ? `${tokenSavingPercent}% Saving` : '100%'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <PresetsPanel
+              MOCK_SPECS={MOCK_SPECS}
+              activeKey={activeKey}
+              handlePresetSelect={handlePresetSelect}
+              customSpecText={customSpecText}
+              setCustomSpecText={setCustomSpecText}
+              handleApplySpec={handleApplySpec}
+              errorMsg={errorMsg}
+              jsonTokenCount={jsonTokenCount}
+              htmlTokenCount={htmlTokenCount}
+              tokenSavingPercent={tokenSavingPercent}
+            />
           ) : (
-            /* ACTIVE SaaS BLACKBOX CHAT TERMINAL (Deep Violet styled backdrop) */
-            <div className="glass-panel" style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              height: '100%', 
-              overflow: 'hidden', 
-              border: `1px solid ${THEME.border}`,
-              backgroundColor: THEME.chatBg
-            }}>
-              <div style={{
-                padding: '12px 16px',
-                borderBottom: `1px solid ${THEME.border}`,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                backgroundColor: 'rgba(0,0,0,0.2)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '600', color: '#fff' }}>
-                  <MessageSquare size={14} style={{ color: THEME.teal }} />
-                  <span>AI Admission Assistant (Real-Time Session)</span>
-                </div>
-              </div>
-
-              {/* Chat Thread */}
-              <div style={{
-                flex: 1,
-                padding: '20px',
-                overflowY: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '20px'
-              }}>
-                {chatMessages.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9ca3af' }}>
-                    <Bot size={36} style={{ color: THEME.accent, margin: '0 auto 12px auto', opacity: 0.6 }} />
-                    <h4 style={{ margin: '0 0 6px 0', color: '#fff', fontSize: '15px' }}>Start Conversation</h4>
-                    <p style={{ margin: 0, fontSize: '13px' }}>Enter query details to trigger dynamic specs.</p>
-                  </div>
-                ) : (
-                  chatMessages.map((msg) => {
-                    const isUser = msg.sender === 'user';
-                    return (
-                      <div 
-                        key={msg.id}
-                        style={{
-                          alignSelf: isUser ? 'flex-end' : 'flex-start',
-                          maxWidth: '85%',
-                          display: 'flex',
-                          gap: '10px',
-                          flexDirection: isUser ? 'row-reverse' : 'row'
-                        }}
-                      >
-                        <div style={{
-                          width: '28px',
-                          height: '28px',
-                          borderRadius: '50%',
-                          backgroundColor: isUser ? THEME.accent : THEME.teal,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#fff',
-                          flexShrink: 0,
-                          boxShadow: `0 0 8px ${isUser ? THEME.accent : THEME.teal}44`
-                        }}>
-                          {isUser ? <User size={13} /> : <Bot size={13} />}
-                        </div>
-
-                        <div style={{
-                          padding: isUser ? '10px 14px' : '0px',
-                          borderRadius: '12px',
-                          backgroundColor: isUser ? 'rgba(168, 85, 247, 0.15)' : 'transparent',
-                          border: isUser ? `1px solid rgba(168, 85, 247, 0.25)` : 'none',
-                          color: isUser ? '#cbd5e1' : 'inherit',
-                          fontSize: '13.5px',
-                          lineHeight: '1.5'
-                        }}>
-                          {isUser ? (
-                            <span>{msg.content}</span>
-                          ) : (
-                            <div style={{ minWidth: '320px' }}>
-                              {(() => {
-                                try {
-                                  const spec = JSON.parse(msg.content);
-                                  return <GenerativeRenderer spec={spec} onFormSubmit={handleFormSubmit} />;
-                                } catch (e) {
-                                  return (
-                                    <div style={{
-                                      padding: '12px 16px',
-                                      borderRadius: '12px',
-                                      backgroundColor: 'rgba(255,255,255,0.02)',
-                                      border: '1px solid rgba(255,255,255,0.05)',
-                                      fontFamily: 'monospace',
-                                      fontSize: '11px',
-                                      color: '#9ca3af'
-                                    }}>
-                                      {msg.isStreaming ? 'Streaming dynamic schema spec...' : msg.content || '...'}
-                                    </div>
-                                  );
-                                }
-                              })()}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-                {isSending && (
-                  <div style={{ alignSelf: 'flex-start', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <div style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      backgroundColor: THEME.teal,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff'
-                    }}>
-                      <Bot size={13} />
-                    </div>
-                    <span style={{ fontSize: '12px', color: '#9ca3af' }}>AI matching active data structures...</span>
-                  </div>
-                )}
-                <div ref={chatEndRef} />
-              </div>
-
-              {/* Send Area */}
-              <div style={{
-                padding: '16px',
-                borderTop: `1px solid ${THEME.border}`,
-                backgroundColor: 'rgba(0,0,0,0.2)',
-                display: 'flex',
-                gap: '10px'
-              }}>
-                <input
-                  type="text"
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && sendChatMessage()}
-                  placeholder="Ask e.g. 'fees list of GCOEA' or 'timetable of rounds'..."
-                  style={{
-                    flex: 1,
-                    padding: '12px 16px',
-                    borderRadius: '10px',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                    color: '#ffffff',
-                    outline: 'none',
-                    fontSize: '13.5px'
-                  }}
-                />
-                <button
-                  onClick={() => sendChatMessage()}
-                  disabled={isSending}
-                  style={{
-                    padding: '0 20px',
-                    borderRadius: '10px',
-                    border: 'none',
-                    backgroundColor: THEME.accent,
-                    color: '#fff',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    fontWeight: '600',
-                    transition: 'background 0.2s',
-                    boxShadow: '0 0 10px rgba(168, 85, 247, 0.3)'
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#9333ea'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = THEME.accent}
-                >
-                  <Send size={13} />
-                  <span>Send</span>
-                </button>
-              </div>
-            </div>
+            <ChatPanel
+              chatMessages={chatMessages}
+              inputText={inputText}
+              setInputText={setInputText}
+              sendChatMessage={sendChatMessage}
+              isSending={isSending}
+              currentSessionId={currentSessionId}
+              handleFormSubmit={handleFormSubmit}
+              onAction={handleAction}
+              chatEndRef={chatEndRef}
+            />
           )}
 
-          {/* Right Side: The Dynamic Visual Output Screen (Displays selected spec render) */}
+          {/* Right Side: The Dynamic Visual Output Screen */}
           <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', border: `1px solid ${THEME.border}` }}>
             <div style={{
               padding: '12px 16px',
@@ -1515,7 +835,7 @@ export default function App() {
 
             <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
               {tabMode === 'presets' ? (
-                <GenerativeRenderer spec={currentSpec} onFormSubmit={handleFormSubmit} />
+                <GenerativeRenderer spec={currentSpec} onFormSubmit={handleFormSubmit} onAction={handleAction} />
               ) : (
                 <div>
                   <div style={{ marginBottom: '16px', fontSize: '12px', color: '#9ca3af', fontStyle: 'italic', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
@@ -1527,7 +847,7 @@ export default function App() {
                       const lastMsg = assistantMsgs[assistantMsgs.length - 1];
                       try {
                         const spec = JSON.parse(lastMsg.content);
-                        return <GenerativeRenderer spec={spec} onFormSubmit={handleFormSubmit} />;
+                        return <GenerativeRenderer spec={spec} onFormSubmit={handleFormSubmit} onAction={handleAction} />;
                       } catch (e) {
                         return (
                           <div style={{
