@@ -10,7 +10,7 @@ from app.config import settings
 from app.db.session import get_db
 from app.db.models import User, ChatSession, ChatMessage
 from app.schemas.chat import ChatSessionResponse, ChatSessionDetail, ChatSessionCreate, ChatMessageResponse, ChatMessageCreate
-from app.services.chatbot import get_llm_chat_response, query_sgbau_knowledge_base
+from app.services.chatbot import query_sgbau_knowledge_base
 import json
 import re
 from app.services.validator import validate_and_repair_json
@@ -158,23 +158,57 @@ async def send_message(
                 line = line.strip()
                 if line:
                     try:
-                        parsed_components.append(json.loads(line))
+                        parsed = json.loads(line)
+                        if isinstance(parsed, dict) and "components" in parsed and "type" not in parsed:
+                            # The LLM ignored instructions and output a wrapped root object on a single line
+                            if isinstance(parsed["components"], list):
+                                parsed_components.extend(parsed["components"])
+                        else:
+                            parsed_components.append(parsed)
                     except Exception:
                         pass
             
-            # Use a robust fallback if nothing parsed
+            # If JSONL parsing completely failed, it might be a multi-line JSON object. 
+            # Let the robust repair validator attempt it.
+            validated_spec_dict = None
             if not parsed_components:
-                parsed_components = [{
-                    "type": "Callout",
-                    "props": {"tone": "danger", "text": "Validation Error: Stream did not produce valid JSONL components."}
-                }]
+                try:
+                    validated_spec_dict = validate_and_repair_json(full_reply_buffer)
+                except Exception:
+                    pass
+            
+            if not validated_spec_dict:
+                # Use a robust fallback if nothing parsed
+                if not parsed_components:
+                    parsed_components = [{
+                        "type": "Callout",
+                        "props": {"tone": "danger", "text": "Validation Error: Stream did not produce valid JSONL components."}
+                    }]
+                    
+                # Construct a raw spec to pass through validation
+                raw_spec = json.dumps({
+                    "components": parsed_components
+                })
                 
-            saved_content = json.dumps({
-                "version": "1.0",
-                "intent": "streaming_response",
-                "confidence": 1.0,
-                "components": parsed_components
-            })
+                try:
+                    validated_spec_dict = validate_and_repair_json(raw_spec)
+                except Exception as e:
+                    pass
+            
+            if validated_spec_dict:
+                saved_content = json.dumps(validated_spec_dict)
+            else:
+                # Fallback if validator entirely fails
+                saved_content = json.dumps({
+                    "version": "1.0",
+                    "intent": "error",
+                    "confidence": 0.0,
+                    "components": [{
+                        "id": "cmp_err_001",
+                        "type": "Callout",
+                        "props": {"tone": "danger", "text": "Server Validation Error: Critical failure parsing LLM stream"}
+                    }]
+                })
             
             # We must open a new DB session since the request-scoped one is likely closed
             from app.db.session import AsyncSessionLocal
@@ -191,4 +225,4 @@ async def send_message(
                 )
                 await background_db.commit()
 
-    return StreamingResponse(generate_response(), media_type="text/event-stream")
+    return StreamingResponse(generate_response(), media_type="application/x-ndjson")

@@ -7,7 +7,7 @@ from app.routers import auth, chat, portal
 
 app = FastAPI(
     title="SGBAU Nexus AI Backend",
-    description="Production-Ready chatbot backend with JWT Authentication, OTP Verification, and Thesys AI engine.",
+    description="Production-Ready chatbot backend with JWT Authentication and OTP Verification.",
     version="1.0.0"
 )
 
